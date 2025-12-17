@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dobble — v36.2 (match amarelo local, 15s, áudio com silenciar)</title>
+<title>Dobble — v36.3 (15s, mute, highlight local, imagens por arquivo)</title>
 <style>
   :root { --bg:#b91c1c; --panel:#dc2626; --ink:#fff; --ring:#facc15; --card: clamp(260px, 44vw, 420px); }
   *{box-sizing:border-box} html,body{height:100%;margin:0}
@@ -22,52 +22,19 @@
   .body{padding:10px}
   .cardwrap{position:relative;width:var(--card);margin-inline:auto}
   .cardwrap::before{content:"";display:block;padding-top:100%}
-  .cardboard{
-    position:absolute; inset:0;
-    background:#ffffff14; border:2px solid #ffffff59;
-    border-radius:18px;
-    overflow:visible;
-  }
-
+  .cardboard{ position:absolute; inset:0; background:#ffffff14; border:2px solid #ffffff59; border-radius:18px; overflow:visible; }
   .token{position:absolute;border-radius:50%;background:#fff;border:2px solid #ffffffd9;box-shadow:0 3px 8px #00000038;display:grid;place-items:center;cursor:pointer;transition:.08s; outline: none;}
   .token:active{transform:scale(.985)}
   .token img{width:98%;height:98%;object-fit:contain;border-radius:50%}
-
-  /* MATCH amarelo brilhante (apenas na tela de quem clicou) */
-  .is-match{
-    border-color: var(--ring) !important;
-    box-shadow:
-      0 0 0 8px rgba(250,204,21,.35),
-      0 0 24px 12px rgba(250,204,21,.45),
-      0 0 60px 18px rgba(250,204,21,.33);
-    position: relative;
-    filter: drop-shadow(0 0 8px rgba(250,204,21,.9));
-  }
-  .is-match::after{
-    content:""; position:absolute; inset:-6px;
-    border:4px solid var(--ring); border-radius:50%;
-    box-shadow:0 0 18px rgba(250,204,21,.75); pointer-events:none;
-  }
-
-  /* ERRO: primeiro clique errado vira azul e bloqueia nova tentativa */
-  .is-wrong{
-    border-color:#60a5fa !important;
-    position:relative;
-    box-shadow:0 0 0 6px rgba(96,165,250,.25), 0 0 20px rgba(96,165,250,.45);
-  }
-  .is-wrong::after{
-    content:""; position:absolute; inset:-6px;
-    border:4px solid #60a5fa; border-radius:50%;
-    box-shadow:0 0 14px rgba(96,165,250,.7); pointer-events:none;
-  }
-
+  .is-match{border-color: var(--ring) !important;box-shadow:0 0 0 8px rgba(250,204,21,.35),0 0 24px 12px rgba(250,204,21,.45),0 0 60px 18px rgba(250,204,21,.33);position: relative;filter: drop-shadow(0 0 8px rgba(250,204,21,.9));}
+  .is-match::after{content:""; position:absolute; inset:-6px;border:4px solid var(--ring); border-radius:50%; box-shadow:0 0 18px rgba(250,204,21,.75); pointer-events:none;}
+  .is-wrong{border-color:#60a5fa !important;position:relative;box-shadow:0 0 0 6px rgba(96,165,250,.25), 0 0 20px rgba(96,165,250,.45);}
+  .is-wrong::after{content:""; position:absolute; inset:-6px;border:4px solid #60a5fa; border-radius:50%; box-shadow:0 0 14px rgba(96,165,250,.7); pointer-events:none;}
   .controls{margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
   .btn[disabled]{opacity:.5;cursor:not-allowed}
-
   .roundbox{margin-top:10px;background:#ffffff14;border:1px solid #ffffff40;border-radius:12px;padding:8px}
   .rankrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-height:28vh;overflow-y:auto;padding-right:4px}
   .rankpill{display:flex;align-items:center;gap:6px;background:#ffffff1a;border:1px solid #ffffff40;border-radius:999px;padding:4px 8px;white-space:nowrap;font-size:13px}
-
   .overlay{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;z-index:50}
   .modal{width:min(920px,92vw);background:#fff;color:#222;border-radius:14px;padding:14px}
   .list{display:flex;flex-direction:column;gap:6px;margin-top:10px;max-height:60vh;overflow-y:auto;padding-right:6px}
@@ -75,38 +42,17 @@
   .li.missed{background:#fff1f2;border-color:#fecdd3}
   .idx{font-weight:800;min-width:140px;text-align:left}.name{font-weight:700}.tag{font-size:12px;opacity:.75}
   .hint{font-size:12px;opacity:.8;margin-top:6px}
-
-  /* PÓDIO */
   .podium{display:flex;align-items:flex-end;gap:12px;height:240px;margin:12px 0}
   .step{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
-  .pod-name{
-    font-weight:900;
-    margin-bottom:6px;
-    text-align:center;
-    font-size:22px;
-    line-height:1.15;
-    text-shadow:0 2px 4px rgba(0,0,0,.25);
-  }
-  .pod-name.first{
-    color:#b45309;
-    background:#fef08a;
-    padding:4px 10px;
-    border-radius:999px;
-    border:2px solid #f59e0b;
-  }
+  .pod-name{font-weight:900;margin-bottom:6px;text-align:center;font-size:22px;line-height:1.15;text-shadow:0 2px 4px rgba(0,0,0,.25);}
+  .pod-name.first{color:#b45309;background:#fef08a;padding:4px 10px;border-radius:999px;border:2px solid #f59e0b;}
   .block{width:100%;border-radius:12px 12px 0 0;position:relative;display:grid;place-items:center}
   .first .block{height:200px;background:#fde68a;border:1px solid #f59e0b}
   .second .block{height:160px;background:#e5e7eb;border:1px solid #9ca3af}
   .third .block{height:140px;background:#fed7aa;border:1px solid #fb923c}
   .trophy{width:72px;height:72px}
   .pod-list{font-size:14px;line-height:1.5;margin-top:8px;white-space:pre-line}
-
-  /* Contagem como botão no topo */
-  #countBadge{
-    display:none;background:#111;color:#fff;border:1px solid #ffffff30;
-    padding:10px 16px;font-size:18px;border-radius:12px;line-height:1;
-  }
-
+  #countBadge{display:none;background:#111;color:#fff;border:1px solid #ffffff30;padding:10px 16px;font-size:18px;border-radius:12px;line-height:1;}
   @media (max-width: 860px){.grid2{grid-template-columns:1fr} :root{--card:min(92vw,68vh)}}
   @media (max-width: 420px){:root{--card:min(94vw,62vh)}}
 </style>
@@ -311,17 +257,14 @@ function stopSynth(){
   synth.running=false; synth.bassOsc=null; synth.bassGain=null;
 }
 
-/* ===== Baralho (q=4 ⇒ 21 símbolos, 5 por carta) ===== */
-function svgPlaceholder(n){
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-    <rect width="100%" height="100%" fill="white"/>
-    <circle cx="256" cy="256" r="230" fill="#ef4444"/>
-    <text x="50%" y="54%" text-anchor="middle" font-size="220" font-family="Segoe UI, Arial, sans-serif" fill="white" font-weight="700">${n}</text>
-  </svg>`;
-  return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(svg)));
-}
-const SYMBOL_EMBED = Array.from({length:21}, (_,i)=>svgPlaceholder(i+1));
+/* ===== FIGURAS: usando arquivos locais (slide01.png … slide21.png) ===== */
+const SYMBOL_EMBED = [
+  "slide01.png","slide02.png","slide03.png","slide04.png","slide05.png","slide06.png","slide07.png",
+  "slide08.png","slide09.png","slide10.png","slide11.png","slide12.png","slide13.png","slide14.png",
+  "slide15.png","slide16.png","slide17.png","slide18.png","slide19.png","slide20.png","slide21.png"
+];
 
+/* ===== Baralho (q=4 ⇒ 21 símbolos, 5 por carta) ===== */
 const q=4;
 function gf4mul(a,b){return [[0,0,0,0],[0,1,2,3],[0,2,3,1],[0,3,1,2]][a][b];}
 function gf4add(a,b){return a^b;}
@@ -357,54 +300,120 @@ let isRoundLocked=false;
 
 const qs=(s)=>document.querySelector(s);
 function clear(el){ while(el.firstChild) el.removeChild(el.firstChild); }
-async function ensureAuth(){ if(auth.currentUser && auth.currentUser.uid){ uid=auth.currentUser.uid; return uid; } await auth.signInAnonymously(); return await new Promise(res=>auth.onAuthStateChanged(u=>{ if(u){uid=u.uid;res(uid);} })); }
+
+/* auth simplificado */
+async function ensureAuth(){
+  if (auth.currentUser && auth.currentUser.uid) {
+    uid = auth.currentUser.uid;
+    return uid;
+  }
+  const cred = await auth.signInAnonymously();
+  uid = cred.user.uid;
+  return uid;
+}
+
 function genCode(){ const s='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let out=''; for(let i=0;i<5;i++) out+=s[Math.floor(Math.random()*s.length)]; return out; }
 
 /* ===== Lobby ===== */
 document.getElementById('genRoomBtn').addEventListener('click', async ()=>{
-  const pwd=(qs('#hostPwd').value||'').trim();
-  if(pwd!=='CLARO') return alert('Para gerar uma nova sala, digite a senha do host (CLARO).');
-  const code=genCode();
-  await enterRoom(code,{forceHost:true});
-  alert('Nova sala criada: '+code+'. Compartilhe este código.');
+  const name = (qs('#playerName').value || '').trim();
+  if (!name) {
+    alert('Digite seu nome antes de gerar a sala.');
+    return;
+  }
+
+  const pwd = (qs('#hostPwd').value || '').trim().toUpperCase();
+  if (pwd !== 'CLARO') {
+    alert('Para gerar uma nova sala, digite a senha do host (CLARO).');
+    return;
+  }
+
+  const code = genCode();
+  try {
+    await enterRoom(code,{forceHost:true});
+    alert('Nova sala criada: ' + code + '. Compartilhe este código com os jogadores.');
+  } catch (e) {
+    console.error('Erro ao criar sala', e);
+    alert('Ocorreu um erro ao criar a sala. Abra o console (F12 → Console) para ver a mensagem.');
+  }
 });
+
 document.getElementById('joinCodeBtn').addEventListener('click', async ()=>{
   const code=(qs('#joinCode').value||'').trim().toUpperCase();
   if(!code) return alert('Digite um código de sala.');
-  await enterRoom(code,{forceJoin:true});
+  try{
+    await enterRoom(code,{forceJoin:true});
+  }catch(e){
+    console.error('Erro ao entrar na sala', e);
+    alert('Erro ao entrar na sala. Veja o console (F12 → Console).');
+  }
 });
+
 (function(){
   const el=document.getElementById('joinCode'); let t=null;
-  const go=()=>{ const v=(el.value||'').trim().toUpperCase(); el.value=v; if(t) clearTimeout(t); if(v.length>=5) t=setTimeout(()=>enterRoom(v,{forceJoin:true}),300); };
+  const go=()=>{ const v=(el.value||'').trim().toUpperCase(); el.value=v; if(t) clearTimeout(t); if(v.length>=5) t=setTimeout(()=>enterRoom(v,{forceJoin:true}).catch(e=>{console.error(e);alert('Erro ao entrar pela digitação automática. Veja o console.');}),300); };
   el.addEventListener('input',go); el.addEventListener('keyup',e=>{ if(e.key==='Enter') go(); });
 })();
 
 async function enterRoom(roomId, opts={}){
   const baseName=(qs('#playerName').value||'').trim();
-  if(!baseName) return alert('Digite seu nome');
-  await ensureAuth();
-  roomRef=db.ref('rooms/'+roomId);
-  const wantHost=opts.forceHost || ((qs('#hostPwd').value||'').trim()==='CLARO');
-  if(wantHost){
-    const ok=await roomRef.child('host').transaction(cur=>cur||uid).then(r=>r.committed && r.snapshot.val()===uid);
-    if(!ok) return alert('Esta sala já possui host. Entre como participante.');
-    await roomRef.transaction(cur=>cur||({
-      createdAt:firebase.database.ServerValue.TIMESTAMP, host:uid,
-      roundIdx:0, rounds:DECK.rounds, scores:{}, state:'playing',
-      firstWinner:{}, roundWinners:{}, guesses:{}, roundLock:false, countdown:null, showPodium:null, showResults:null, highlight:null
-    }));
-    isHost=true;
-  } else { isHost=false; }
+  if(!baseName) {
+    alert('Digite seu nome');
+    throw new Error('Nome vazio');
+  }
 
-  const pSnap=await roomRef.child('players').get();
-  const players=pSnap.val()||{};
-  const existing=new Set(Object.values(players).map(p=>p.name));
-  let name=baseName;
-  if(existing.has(name)){ let n=2; while(existing.has(`${baseName} (${n})`)) n++; name=`${baseName} (${n})`; }
-  me={name};
+  await ensureAuth();
+  roomRef = db.ref('rooms/'+roomId);
+
+  const wantHost = !!opts.forceHost;
+  if (wantHost) {
+    try{
+      const r = await roomRef.child('host').transaction(cur => cur || uid);
+      const ok = r.committed && r.snapshot.val() === uid;
+      if(!ok){
+        alert('Esta sala já possui host. Entre como participante.');
+        throw new Error('Host já existe');
+      }
+
+      await roomRef.transaction(cur => cur || ({
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        host: uid,
+        roundIdx: 0,
+        rounds: DECK.rounds,
+        scores: {},
+        state: 'playing',
+        firstWinner: {},
+        roundWinners: {},
+        guesses: {},
+        roundLock: false,
+        countdown: null,
+        showPodium: null,
+        showResults: null,
+        highlight: null
+      }));
+      isHost = true;
+    }catch(e){
+      console.error('Erro ao configurar host/sala', e);
+      alert('Erro ao configurar a sala no Firebase. Veja o console (F12 → Console).');
+      throw e;
+    }
+  } else {
+    isHost = false;
+  }
+
+  const pSnap = await roomRef.child('players').get();
+  const players = pSnap.val() || {};
+  const existing = new Set(Object.values(players).map(p=>p.name));
+  let name = baseName;
+  if(existing.has(name)){
+    let n=2;
+    while(existing.has(`${baseName} (${n})`)) n++;
+    name = `${baseName} (${n})`;
+  }
+  me = { name };
   await roomRef.child('players/'+uid).set(me);
 
-  room=roomId;
+  room = roomId;
   qs('#roomInfo').textContent='Sala: '+room;
   qs('#roleInfo').textContent=isHost?'Host':'Jogador';
   qs('#playerHeader').textContent='Jogador — '+me.name;
@@ -414,9 +423,11 @@ async function enterRoom(roomId, opts={}){
   document.getElementById('resetScores').disabled = !isHost;
   document.getElementById('showPodium').disabled = !isHost;
 
-  subscribeRoom(); renderRound();
+  subscribeRoom();
+  renderRound();
 }
 
+/* ===== Firebase listeners ===== */
 function subscribeRoom(){
   roomRef.child('host').on('value', s=>{hostUid=s.val()||null;});
   roomRef.child('state').on('value', s=>{ if(s.val()==='finished') showFinalOverlay(); });
@@ -435,7 +446,18 @@ function subscribeRoom(){
   });
   roomRef.child('roundLock').on('value', s=>{ isRoundLocked = !!s.val(); });
 
-  /* Contagem (áudio + badge) */
+  // PÓDIO
+  roomRef.child('showPodium').on('value', s=>{
+    const v = s.val();
+    if (v) {
+      updatePodium();
+      showPodiumOverlay();
+    } else {
+      hidePodiumOverlay();
+    }
+  });
+
+  // Contagem
   roomRef.child('countdown').on('value', s=>{
     const data = s.val();
     if(data && typeof data.duration==='number' && typeof data.startAt==='number'){
@@ -443,24 +465,23 @@ function subscribeRoom(){
     }else{ stopCountdownBadgeUI(); }
   });
 
+  // Resultados da rodada
   roomRef.child('showResults').on('value', s=>{
     const v=s.val();
     if(v && typeof v.round==='number') showResultsModal(v.round);
     else hideResultsModal();
   });
-
-  // ⚠️ Removido highlight global para que só quem clicou veja o amarelo local.
-  // roomRef.child('highlight').on('value', s=>{ ... });
 }
 
-/* ===== Render das cartas (5 círculos) ===== */
+/* ===== Render das cartas ===== */
 let currentCenterEls = {};
 let currentMineEls = {};
 
 function renderRound(){
   const r=(DECK.rounds[roundIdx]||{center:0,mine:1,match:0});
   const center=DECK.cards[r.center], mine=DECK.cards[r.mine], common=r.match;
-  const centerEl=document.getElementById('center'), mineEl=document.getElementById('mine'); clear(centerEl); clear(mineEl);
+  const centerEl=document.getElementById('center'), mineEl=document.getElementById('mine'); 
+  clear(centerEl); clear(mineEl);
   currentCenterEls = {}; currentMineEls = {};
 
   const BASE_POS=[[28,26,44],[72,26,44],[50,50,40],[28,74,44],[72,74,44]];
@@ -503,19 +524,17 @@ function renderRound(){
   const scaleCenter=computeScale(center.map(sid=>BASE_POS[mapCenter[sid]]));
   const scaleMine=computeScale(mine.map(sid=>BASE_POS[mapMine[sid]]));
 
-  // mesa (não clica)
   center.forEach(sid=>{
     const el = placeToken(centerEl,sid,mapCenter[sid],scaleCenter,false,null);
     currentCenterEls[sid]=el;
   });
 
-  // jogador
   mine.forEach(sid=>{
     const el = placeToken(mineEl,sid,mapMine[sid],scaleMine,false,null);
     currentMineEls[sid]=el;
   });
 
-  /* clique do jogador */
+  /* clique local */
   Array.from(mineEl.children).forEach(btn=>{
     btn.addEventListener('click', e=>{
       if (clickedInRound || isRoundLocked) return;
@@ -528,26 +547,17 @@ function renderRound(){
         return;
       }
 
-      // MATCH amarelo local (sem highlight global)
-      const a = currentCenterEls[r.match];
-      const b = currentMineEls[r.match];
-      if (a) a.classList.add('is-match');
-      if (b) b.classList.add('is-match');
+      (currentCenterEls[r.match]||{}).classList?.add('is-match');
+      (currentMineEls[r.match]||{}).classList?.add('is-match');
 
       const myEntryRef = roomRef.child('roundWinners/'+roundIdx+'/'+uid);
       myEntryRef.set({name:(me?.name||'Jogador'), ts: firebase.database.ServerValue.TIMESTAMP}).then(()=>{
-
-        // só o primeiro pontua
         const firstRef=roomRef.child('firstWinner/'+roundIdx);
         firstRef.transaction(cur => cur || {uid, name:(me?.name||'Jogador'), ts: firebase.database.ServerValue.TIMESTAMP}, async (wErr, wCommitted, snap)=>{
           if (wErr || !wCommitted) return;
           const v=snap.val(); if (!v || v.uid !== uid) return;
-
           await roomRef.child('scores/'+uid).transaction(x => (x||0)+1);
-          // sem highlight global
-          // await roomRef.child('highlight/'+roundIdx).set({sid:r.match, by:uid, at: firebase.database.ServerValue.TIMESTAMP});
         });
-
       });
     }, {once:false});
   });
@@ -681,7 +691,7 @@ async function showResultsModal(roundNumber){
 }
 function hideResultsModal(){ document.getElementById('resultsOverlay').style.display='none'; }
 
-/* ===== Contagem como BOTÃO no topo + áudio ===== */
+/* ===== Contagem + Áudio ===== */
 let countTimer=null, countEndAt=0, currentCountdownRound=null;
 const countBadge = document.getElementById('countBadge');
 const roundFileInput = document.getElementById('roundAudioFile');
@@ -694,11 +704,9 @@ roundFileInput.addEventListener('change', (ev)=>{
   const f = ev.target.files && ev.target.files[0];
   if(!f) return;
 
-  // interrompe qualquer áudio atual (e o synth)
   try { roundAudioEl.pause(); roundAudioEl.currentTime = 0; } catch(_) {}
   stopSynth();
 
-  // substitui por completo a trilha antiga
   if (customRoundAudioURL) { try { URL.revokeObjectURL(customRoundAudioURL); } catch(_) {} }
   customRoundAudioURL = URL.createObjectURL(f);
   roundAudioEl.src = customRoundAudioURL;
@@ -743,7 +751,6 @@ muteSoundBtn.addEventListener('click', ()=>{
     }
   }
 });
-
 function startCountdownBadgeUI(data){
   currentCountdownRound = data.round;
   countBadge.style.display='inline-block';
@@ -764,7 +771,7 @@ function startCountdownBadgeUI(data){
   tryPlay();
 
   const startAt = data.startAt;
-  const dur = (data.duration||15)*1000; // 15s
+  const dur = (data.duration||15)*1000;
   countEndAt = startAt + dur;
 
   if(countTimer) clearInterval(countTimer);
@@ -844,7 +851,7 @@ function showFinalOverlay(){
   document.getElementById('closeFinalBtn').onclick=()=>{ overlay.style.display='none'; };
 }
 
-/* ===== Embutir Figuras ===== */
+/* ===== Embutir Figuras (gera novo HTML com base64) ===== */
 const embedBtn = document.getElementById('embedBtn');
 const embedOverlay = document.getElementById('embedOverlay');
 const cancelEmbed = document.getElementById('cancelEmbed');
