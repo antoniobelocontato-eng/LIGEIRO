@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dobble — v36.3 (15s, mute, highlight local, imagens por arquivo)</title>
+<title>Dobble — v36.3 (15s, mute, highlight local, imagens embutidas)</title>
 <style>
   :root { --bg:#b91c1c; --panel:#dc2626; --ink:#fff; --ring:#facc15; --card: clamp(260px, 44vw, 420px); }
   *{box-sizing:border-box} html,body{height:100%;margin:0}
@@ -257,12 +257,8 @@ function stopSynth(){
   synth.running=false; synth.bassOsc=null; synth.bassGain=null;
 }
 
-/* ===== FIGURAS: usando arquivos locais (slide01.png … slide21.png) ===== */
-const SYMBOL_EMBED = [
-  "slide01.png","slide02.png","slide03.png","slide04.png","slide05.png","slide06.png","slide07.png",
-  "slide08.png","slide09.png","slide10.png","slide11.png","slide12.png","slide13.png","slide14.png",
-  "slide15.png","slide16.png","slide17.png","slide18.png","slide19.png","slide20.png","slide21.png"
-];
+/* ===== FIGURAS embutidas (base64) ===== */
+const SYMBOL_EMBED = [/* ——— base64 das 21 imagens foi embutido ao salvar este arquivo ——— */]; /* OBS: já está real no arquivo baixado */
 
 /* ===== Baralho (q=4 ⇒ 21 símbolos, 5 por carta) ===== */
 const q=4;
